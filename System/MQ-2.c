@@ -1,0 +1,60 @@
+#include "stm32f10x.h"                  // Device header
+#include "OLED.h"
+#include "Delay.h"
+uint16_t MQ2_Flag = 1;
+
+void MQ2_Init(void)
+{
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);	//使能
+	
+	GPIO_InitTypeDef GPIO_InitStructure;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_14;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
+	
+	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource14);	//EXTI选择
+	
+	EXTI_InitTypeDef EXTI_InitStructure;
+	EXTI_InitStructure.EXTI_Line = EXTI_Line14;
+	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
+	EXTI_Init(&EXTI_InitStructure);
+	
+	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
+	
+	NVIC_InitTypeDef NVIC_InitStructure;
+	NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+	NVIC_Init(&NVIC_InitStructure);
+}
+
+uint16_t MQ2_Get(void)
+{
+	if(MQ2_Flag == 0)
+	{
+		OLED_ShowCHinese(3,5,18);
+		OLED_ShowCHinese(3,6,17);
+	}
+	return MQ2_Flag;
+}
+
+void EXTI15_10_IRQHandler(void)
+{
+	if (EXTI_GetITStatus(EXTI_Line14) == RESET)
+	{
+		
+		Delay_ms(50);
+		/*如果出现数据乱跳的现象，可再次判断引脚电平，以避免抖动*/
+		if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == RESET)
+		{
+			MQ2_Flag = 0;
+			EXTI_ClearITPendingBit(EXTI_Line14);
+		}
+		
+	}
+}
