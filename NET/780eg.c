@@ -42,7 +42,7 @@ void Air780EG_Clear(void)
   */
 _Bool Air780EG_WaitRecive(void)
 {
-    //size_t length;
+    // size_t length;
     if (Air780EG_cnt == 0)
         return REV_WAIT; // 完全没在接收
 
