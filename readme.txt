@@ -6,6 +6,12 @@ B11-MAX30102.SCL
 B9  - MAX30102.INT
 
 A7 -OLED.SDA
-A5 -OLED.SDA
+A5 -OLED.SCL
 
-PA0
+PA1-780EG.INT
+串口2-780EG主串口
+
+780EG5V供电 其他设备3.3v供电
+
+两个串口分别引出排针供测试使用
+gnd、3.3v、5v各引一个出来

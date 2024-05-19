@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include "780eg.h"
 
@@ -48,12 +49,15 @@ _Bool Air780EG_WaitRecive(void)
 
     if (Air780EG_cnt == Air780EG_lastcnt) // 如果上一次的值和这次相同，则说明接收完毕
     {
-        // length = strlen(Air780EG_buf);
-        // if (length < 256 - 1) {
-        //     Air780EG_buf[length] = '\0'; //非必要，为字符串尾部增加'\0',以防下面strcpy出错
-        // } else {
-        //     Air780EG_buf[256 - 1] = '\0';
-        // }
+        /*
+        length = strlen(Air780EG_buf);
+        if (length < 256 - 1) {
+            Air780EG_buf[length] = '\0'; //非必要，为字符串尾部增加'\0',以防下面strcpy出错
+        } else {
+            Air780EG_buf[256 - 1] = '\0';
+        }
+        */
+
         Air780EG_cnt = 0; // 清零接收计数值
         return REV_OK;
     }
@@ -78,12 +82,12 @@ _Bool Air780EG_Sendcmd(char *cmd, char *ret, char *respond)
 
         if (Air780EG_WaitRecive() == REV_OK) // 如果收到数据
         {
+            UsartPrintf(USART1, "buf:%d\r\n", Air780EG_cnt);
             if (strstr((const char *)Air780EG_buf, ret) != NULL) // 如果检索到关键词
             {
                 if (respond != NULL) { // 判断是否有填返回值参数
                     strcpy(respond, (const char *)Air780EG_buf);
                 }
-
                 Air780EG_Clear(); // 清空缓存
                 return 0;
             }
@@ -105,13 +109,13 @@ void Air780EG_Init()
 
     GPIO_InitTypeDef GPIO_InitStructure;
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_Out_PP;
-    GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_0;
+    GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_1;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOA, &GPIO_InitStructure); // reset低电平有效
 
-    GPIO_WriteBit(GPIOA, GPIO_Pin_0, Bit_RESET);
+    GPIO_WriteBit(GPIOA, GPIO_Pin_1, Bit_RESET);
     Delay_ms(2000);
-    GPIO_WriteBit(GPIOA, GPIO_Pin_0, Bit_SET);
+    GPIO_WriteBit(GPIOA, GPIO_Pin_1, Bit_SET);
     Delay_ms(2000);
 
     UsartPrintf(USART1, "Reset!");
@@ -125,7 +129,6 @@ void Air780EG_Init()
     UsartPrintf(USART1, "AT OK!");
     while (Air780EG_Sendcmd("AT+CPIN?\r\n", "READY", NULL)) // 查询PIN码锁状态
         Delay_ms(100);
-
     UsartPrintf(USART1, "SIM OK!");
     while (Air780EG_Sendcmd("AT+CGATT?\r\n", "+CGATT: 1", test)) // 查询SIM卡是否附着
         Delay_ms(100);
@@ -167,6 +170,58 @@ unsigned char save_jsonData(char *json_output, char msg[], void *value, enum Dat
     return json_len;
 }
 
+/** 测试代码
+ * @brief	将多个数据封包为json格式
+ * @param	msg:消息键值名
+ * @param   value：数据值
+ * @param	Type:数据类型，可以为int和float
+ * @retval	字符串长度
+ */
+
+unsigned char save_testjsonData(char *json_output, struct Data data_array[], int count)
+{
+    unsigned short json_len = 0;
+    char json_buf[100]; // buf:数据存储区
+    int i;
+    memset(json_buf, 0, sizeof(json_buf));
+    json_len += sprintf(json_buf, "{"); // 我来组成头部
+    UsartPrintf(USART1, "initjson_output:%s\r\n", &json_output);
+    for (i = 0; i < count; i++) {
+
+        UsartPrintf(USART1, "msg:%s\r\n", data_array[i].msg);
+        UsartPrintf(USART1, "type:%d\r\n", data_array[i].type);
+        UsartPrintf(USART1, "value:%f\r\n", data_array[i].value);
+
+        switch (data_array[i].type) {
+            case Int:
+                json_len += sprintf(json_buf + json_len, "\\22%s\\22:%d", data_array[i].msg, *((int *)data_array[i].value)); // 键值对
+                break;                                                                                                       // 将数据格式化成json
+            case Float:
+                json_len += sprintf(json_buf + json_len, "\\22%s\\22:%f", data_array[i].msg, *((float *)data_array[i].value));
+                UsartPrintf(USART1, "进入float:%s\r\n", &json_buf);
+                break; // 将数据格式化成json
+        }
+        if (i < count - 1) {
+            json_len += sprintf(json_buf + json_len, ","); // 如果不是最后一个数据，添加，
+        }
+
+        UsartPrintf(USART1, "循环json_output:%s\r\n", &json_output);
+
+        json_len += sprintf(json_output, "%s", json_buf); // 把json_buf内容复制到json_output上作为输出
+
+        UsartPrintf(USART1, "循环json_buf:%s\r\n", &json_buf);
+
+        memset(json_buf, 0, sizeof(json_buf)); // 清空缓存,指针仍然指向&json_buf[0]
+
+        UsartPrintf(USART1, "循环end:%s\r\n", &json_output);
+    }
+
+    strcat(json_output, "}"); // 组成尾部
+    json_len = strlen(json_buf) / sizeof(char);
+    UsartPrintf(USART1, "jsonend:%s\r\n", &json_output);
+    return json_len;
+}
+
 /**
  * @brief	将数据封包为json格式 心率、血氧、温度专用
  * @param	json_output:输出，value1、2、3：数据值，
@@ -176,9 +231,9 @@ unsigned char save_therejsonData(char *json_output, float *SPO2_value, int *hear
 {
     unsigned short json_len;
     char json_buf[150];
-    sprintf(json_buf, "{\\22%s\\22:%1f,\\22%s\\22:%d,\\22%s\\22:%d}", "SPO2", *SPO2_value, "heart", *heart_value, "temp", *temp_value); // 将数据格式化成json
-    json_len = strlen(json_buf) / sizeof(char);                                                                                         // 字符串长度
-    memcpy(json_output, json_buf, json_len);                                                                                            // copy json数据到
+    sprintf(json_buf, "{\\22%s\\22:%.2f,\\22%s\\22:%d,\\22%s\\22:%d}", "SPO2", *SPO2_value, "heart", *heart_value, "temp", *temp_value); // 将数据格式化成json
+    json_len = strlen(json_buf) / sizeof(char);                                                                                          // 字符串长度
+    memcpy(json_output, json_buf, json_len);                                                                                             // copy json数据到
     return json_len;
 }
 
@@ -187,8 +242,9 @@ unsigned char save_therejsonData(char *json_output, float *SPO2_value, int *hear
   * @param	Type:数据类型,,,
     @param	qos：服务质量
     @param	retain：保留标志
-    @param	char topic[]：消息主题
+    @param	topic：消息主题
     @param  data：消息内容
+    @param  msg：消息键值对
     典型:AT+MPUB="test2",0,0,"{\22msg\22:\22say\22}"
   * @retval
   */
@@ -196,7 +252,8 @@ void Air780EG_Sendmqttdata(enum DataType Type, char topic[], int qos, int retain
 {
     char buf[150];     // 存储要json字符
     char sendbuf[150]; // 存储要发送的总字符
-
+    char retur[256];
+    bool x;
     Air780EG_Clear(); // 清缓存
     memset(sendbuf, 0, sizeof(sendbuf));
     memset(buf, 0, sizeof(buf));
@@ -205,8 +262,11 @@ void Air780EG_Sendmqttdata(enum DataType Type, char topic[], int qos, int retain
     UsartPrintf(USART1, "pack ready\r\n");
     sprintf(sendbuf, "AT+MPUB=\"%s\",%d,%d,\"%s\"\r\n", topic, qos, retain, buf); // '\'转义 ，" \" "代表”双引号
 
-    Air780EG_Sendcmd(sendbuf, "OK\r\n", NULL);
+    x = Air780EG_Sendcmd(sendbuf, "OK\r\n", retur);
+    UsartPrintf(USART1, "return:%s", retur);
+    UsartPrintf(USART1, "flag:%d", x);
 
+    memset(sendbuf, 0, sizeof(retur));
     memset(sendbuf, 0, sizeof(sendbuf));
     memset(buf, 0, sizeof(buf));
 }
@@ -223,7 +283,8 @@ void Air780EG_Sendtheremqttdata(char topic[], float *SPO2_data, int *heart_data,
 {
     char buf[150];     // 存储要json字符
     char sendbuf[150]; // 存储要发送的总字符
-
+    bool send_flag;
+    char test[100];
     Air780EG_Clear(); // 清缓存
     memset(sendbuf, 0, sizeof(sendbuf));
     memset(buf, 0, sizeof(buf));
@@ -232,7 +293,53 @@ void Air780EG_Sendtheremqttdata(char topic[], float *SPO2_data, int *heart_data,
     UsartPrintf(USART1, "pack ready\r\n");
     sprintf(sendbuf, "AT+MPUB=\"%s\",%d,%d,\"%s\"\r\n", topic, 0, 0, buf); // '\'转义 ，" \" "代表”双引号
 
-    Air780EG_Sendcmd(sendbuf, "OK\r\n", NULL);
+    send_flag = Air780EG_Sendcmd(sendbuf, "OK\r\n", test);
+
+    UsartPrintf(USART1, "send_flag:%d\r\n", send_flag);
+    UsartPrintf(USART1, "there_return:%s\r\n", test);
+
+    UsartPrintf(USART1, "bool:%d", strstr((const char *)test, "767"));
+
+    if (strstr((const char *)test, "767") != NULL && send_flag == 1) // 错误码
+    {
+        UsartPrintf(USART1, "bool:%d", strstr((const char *)test, "767"));
+        while (Air780EG_Sendcmd(AT_EMQX_IP, "CONNECT OK", NULL))
+            Delay_ms(100);
+        while (Air780EG_Sendcmd(AT_EMQX_Client, "OK", NULL))
+            Delay_ms(100);
+        while (Air780EG_Sendcmd(AT_EMQX_CONNECT, "CONNACK OK", NULL))
+            Delay_ms(100);
+        Air780EG_Sendcmd(sendbuf, "OK\r\n", test);
+    }
+    memset(sendbuf, 0, sizeof(sendbuf));
+    memset(buf, 0, sizeof(buf));
+}
+
+/**
+  * @brief	通过AT+MPUB发布命令发送json格式的单个数据
+  * @param	Type:数据类型,,,
+    @param	qos：服务质量
+    @param	retain：保留标志
+    @param	topic：消息主题
+    @param  data：消息内容
+    @param  msg：消息键值对
+    典型:AT+MPUB="test2",0,0,"{\22msg\22:\22say\22}"
+  * @retval
+  */
+void Air780EG_testSendmqttdata(char topic[], int qos, int retain, struct Data data_array[], int count, char *respond)
+{
+    char buf[150];     // 存储要json字符
+    char sendbuf[150]; // 存储要发送的总字符
+
+    Air780EG_Clear(); // 清缓存
+    memset(sendbuf, 0, sizeof(sendbuf));
+    memset(buf, 0, sizeof(buf));
+
+    save_testjsonData(buf, data_array, count);
+    UsartPrintf(USART1, "jsonoutput:%s\r\n", &buf);
+    sprintf(sendbuf, "AT+MPUB=\"%s\",%d,%d,\"%s\"\r\n", topic, qos, retain, buf);
+    UsartPrintf(USART1, "cmdoutput:%s\r\n", &sendbuf);
+    Air780EG_Sendcmd(sendbuf, "OK\r\n", respond);
 
     memset(sendbuf, 0, sizeof(sendbuf));
     memset(buf, 0, sizeof(buf));
@@ -278,10 +385,11 @@ _Bool Air780EG_sendGNSSdata()
 {
     char GNSS_respond[256];
     char *GNSS_position;
-    int count, fix_status = 0; // 计数值和定位状态
-    float data[2];             // 经纬度存储
+    int count = 0; // 计数值和定位状态
+    float data[6]; // 经纬度存储'
+    char send_buf[150];
 
-    /*
+    /*  健壮程序，防止意外退出
     while (Air780EG_Sendcmd("AT+CGNSPWR?", "OK\r\n", GNSS_respond)) // 查询GNSS状态
         Delay_ms(500);
     if (strstr((const char *)GNSS_respond, "1") != NULL) // 如果检索到关键词'1'即为打开
@@ -294,32 +402,34 @@ _Bool Air780EG_sendGNSSdata()
     }
     */
 
-    while (Air780EG_Sendcmd("AT+CGNSINF", "+CGNSINF", GNSS_respond))
+    Air780EG_Sendcmd("AT+CGNSINF\r\n", "OK\r\n", GNSS_respond);
+    UsartPrintf(USART1, "gnssreturn:%s\r\n", GNSS_respond);
 
-        GNSS_position = strtok(GNSS_respond, ","); // 分割字符串
+    UsartPrintf(USART1, "gnssget\r\n");
+
+    GNSS_position = strtok(GNSS_respond, ","); // 分割字符串
+
+    UsartPrintf(USART1, "position:%s\r\n", GNSS_position);
+
+    UsartPrintf(USART1, "stringcut\r\n");
+
     while (GNSS_position != NULL) {
 
-        // 是否成功定位
-        if (count == 1) {
-            fix_status = atoi(GNSS_position);
-            if (fix_status == 0) {
-                Air780EG_Sendmqttdata(Int, "warning", 0, 0, &fix_status, "fix_status");
-                return 1;
-            }
+        UsartPrintf(USART1, "position%d:%s\r\n", count, GNSS_position);
+        if (count > 2 && count < 5) {              // 取4、5
+            data[count - 3] = atof(GNSS_position); // 将相应的信息转换成浮点型之后存到数组里面
+            UsartPrintf(USART1, "cut:%f\r\n", data[count - 3]);
         }
-
-        // 返回1则代表定位成功
-        if (fix_status == 1) {
-            if (count > 3 && count < 6) {
-                data[count - 4] = atof(GNSS_position); // 将相应的信息转换成浮点型之后存到数组里面
-            }
-            count++;
-        }
+        count++;
         GNSS_position = strtok(NULL, ",");
     }
-    // 发送数据
+    UsartPrintf(USART1, "gnss_data1:%1f\r\n", data[0]);
+    UsartPrintf(USART1, "gnss_data2:%1f\r\n", data[1]); // 发送数据
+    // Air780EG_Sendmqttdata(Float, "g0000001", 0, 0, &data[0], "longitude");
+    // Air780EG_Sendmqttdata(Float, "g0000001", 0, 0, &data[1], "latitude");
     return 0;
 }
+
 /*
 int main()
 {
