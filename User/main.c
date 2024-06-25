@@ -1,3 +1,36 @@
+/*
+ *                        _oo0oo_
+ *                       o8888888o
+ *                       88" . "88
+ *                       (| -_- |)
+ *                       0\  =  /0
+ *                     ___/`---'\___
+ *                   .' \\|     |// '.
+ *                  / \\|||  :  |||// \
+ *                 / _||||| -:- |||||- \
+ *                |   | \\\  - /// |   |
+ *                | \_|  ''\---/''  |_/ |
+ *                \  .-\__  '-'  ___/-. /
+ *              ___'. .'  /--.--\  `. .'___
+ *           ."" '<  `.___\_<|>_/___.' >' "".
+ *          | | :  `- \`.;`\ _ /`;.`/ - ` : | |
+ *          \  \ `_.   \_ __\ /__ _/   .-` /  /
+ *      =====`-.____`.___ \_____/___.-`___.-'=====
+ *                        `=---='
+ *
+ *
+ *      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *
+ *            佛祖保佑     永不宕机     永无BUG
+ *
+ * @Author: mojionghao
+ * @Date: 2024-04-08 11:17:38
+ * @LastEditors: mojionghao
+ * @LastEditTime: 2024-06-25 19:46:57
+ * @FilePath: \重构v1.3 - 780eg（无GPS）\User\main.c
+ * @Description:
+ */
+
 #include "stm32f10x.h" // Device header
 #include <stdio.h>
 #include "Delay.h"
@@ -12,9 +45,6 @@
 #include "usart.h"
 #include "780eg.h"
 #include <string.h>
-/*
-
- */
 
 float Pitch, Roll, Yaw;
 uint8_t i;
@@ -23,6 +53,7 @@ int fall_value, SPO2, temperature;
 
 int fall_value;
 int test1 = 10;
+float longtitued, latitude = 0;
 
 int main(void)
 {
@@ -56,20 +87,18 @@ int main(void)
     Air780EG_Init();
     Delay_ms(500);
     Air780EG_Sendmqttdata(Int, "test2", 0, 0, &test1, "msg"); // 发送上线消息
+
     Air780EG_GNSSInit();
-    Air780EG_sendGNSSdata();
+    Air780EG_sendGNSSdata(NULL, NULL);
+
     Air780EG_Sendtheremqttdata("l00000001", &test_float, &test_int1, &test_int2);
     Air780EG_Clear();
 
     struct Data data1[1];
 
-    strcpy(data1[0].msg,"HI");
+    strcpy(data1[0].msg, "HI");
     data1[0].type  = Float;
-    data1[0].value = (void*)&test_float;
-
-    UsartPrintf(USART1, "init_msg:%s\r\n", data1[0].msg);
-    UsartPrintf(USART1, "init_type:%d\r\n", data1[0].type);
-    UsartPrintf(USART1, "init_value:%f\r\n", data1[0].value);
+    data1[0].value = (void *)&test_float;
 
     Air780EG_testSendmqttdata("test2", 0, 0, &data1[0], 1, NULL);
 
@@ -80,7 +109,6 @@ int main(void)
 
     for (i = 0; i < 128; i++) {
         while (MAX30102_INTPin_Read() == 0) {
-
             max30102_read_fifo();
         }
     }
@@ -103,13 +131,32 @@ void TIM2_IRQHandler(void)
         */
         count++;
         if (count % 3000 == 0) { // count
-            Air780EG_sendGNSSdata();
+
+            // 构建结构体数组
+            struct Data data[3];
+
+            strcpy(data[0].msg, "SPO2");
+            data[0].type  = Float;
+            data[0].value = (void *)&g_blooddata.SpO2;
+
+            strcpy(data[1].msg, "heart");
+            data[1].type  = Int;
+            data[1].value = (void *)&g_blooddata.heart;
+
+            strcpy(data[2].msg, "temp");
+            data[2].type  = Int;
+            data[2].value = (void *)&temperature;
+
+            // 发送结构体数组
+            Air780EG_testSendmqttdata("l00000001", 0, 0, data, 3, NULL);
             Air780EG_Clear();
-            Air780EG_Sendtheremqttdata("l00000001", &g_blooddata.SpO2, &g_blooddata.heart, &temperature);
-            Air780EG_Clear();
+
+            // Air780EG_Sendtheremqttdata("l00000001", &g_blooddata.SpO2, &g_blooddata.heart, &temperature);
+
             count = 0;
         }
         if (fabs(Pitch) > 40 || fabs(Roll) > 40 || fabs(Yaw) > 40) {
+
             fall_value++;
         }
         if (fall_value > 0 && fall_value % 100 == 0) { // 防止跌倒后不断向EMQX发送消息
@@ -136,6 +183,25 @@ void TIM3_IRQHandler(void)
             UsartPrintf(USART_DEBUG, "temp:%d\r\n", temperature);
 
             UsartPrintf(USART1, "clean\r\n");
+
+            Air780EG_Clear();
+            Air780EG_sendGNSSdata(&longtitued, &latitude);
+
+            struct Data GNSS_data[2];
+
+            strcpy(GNSS_data[0].msg, "longitude");
+            GNSS_data[0].type  = Float;
+            GNSS_data[0].value = (void *)&longtitued;
+
+            strcpy(GNSS_data[1].msg, "latitude");
+            GNSS_data[1].type  = Float;
+            GNSS_data[1].value = (void *)&latitude;
+
+            Air780EG_testSendmqttdata("g00000001", 0, 0, GNSS_data, 2, NULL);
+
+            UsartPrintf(USART1, "gnssSENDOK\r\n");
+            UsartPrintf(USART1, "sendgnss_data!");
+            Air780EG_Clear();
 
             flag = 0;
         }

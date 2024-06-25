@@ -32,8 +32,8 @@ unsigned char save_therejsonData(char *json_output, float *SPO2_value, int *hear
 void Air780EG_Sendmqttdata(enum DataType Type, char topic[], int qos, int retain, void *data, char msg[]); // 发送数据到EMQX
 void Air780EG_Sendtheremqttdata(char topic[], float *SPO2_data, int *heart_data, int *temp_data);
 void Air780EG_GNSSInit();
-_Bool Air780EG_sendGNSSdata();
+_Bool Air780EG_sendGNSSdata(float *longitude, float *latitude);
 
-void Air780EG_testSendmqttdata(char topic[], int qos, int retain, struct Data data_array[], int count, char *respond);//测试
+void Air780EG_testSendmqttdata(char topic[], int qos, int retain, struct Data data_array[], int count, char *respond); // 测试
 
 #endif

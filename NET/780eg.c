@@ -1,10 +1,42 @@
+/*
+ *                                                     __----~~~~~~~~~~~------___
+ *                                    .  .   ~~//====......          __--~ ~~
+ *                    -.            \_|//     |||\\  ~~~~~~::::... /~
+ *                 ___-==_       _-~o~  \/    |||  \\            _/~~-
+ *         __---~~~.==~||\=_    -_--~/_-~|-   |\\   \\        _/~
+ *     _-~~     .=~    |  \\-_    '-~7  /-   /  ||    \      /
+ *   .~       .~       |   \\ -_    /  /-   /   ||      \   /
+ *  /  ____  /         |     \\ ~-_/  /|- _/   .||       \ /
+ *  |~~    ~~|--~~~~--_ \     ~==-/   | \~--===~~        .\
+ *           '         ~-|      /|    |-~\~~       __--~~
+ *                       |-~~-_/ |    |   ~\_   _-~            /\
+ *                            /  \     \__   \/~                \__
+ *                        _--~ _/ | .-~~____--~-/                  ~~==.
+ *                       ((->/~   '.|||' -_|    ~~-/ ,              . _||
+ *                                  -_     ~\      ~~---l__i__i__i--~~_/
+ *                                  _-~-__   ~)  \--______________--~~
+ *                                //.-~~~-~_--~- |-------~~~~~~~~
+ *                                       //.-~~~--\
+ *                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ * 
+ *                               神兽保佑            永无BUG
+ * 
+ * @Author: mojionghao
+ * @Date: 2024-04-08 11:25:05
+ * @LastEditors: mojionghao
+ * @LastEditTime: 2024-06-25 19:51:06
+ * @FilePath: \重构v1.3 - 780eg（无GPS）\NET\780eg.c
+ * @Description: 
+ */
+
 /**
     说明：780EG驱动，适用于EC618&EC716&EC718系列 AT指令内置MQTT协议，不用额外的协议文件
-    简单MQTT发送json数据功能
+    简单MQTT发送json数据功能 v2.0更新了gps功能以及更改了数据传入方式，使用结构体数组传参
     日期：24/4/16
-    版本：v1.0
+    版本：v2.0
     广州软件学院萝卜丁团队出品
 **/
+
 #include "stm32f10x.h" // Device header
 
 // C库
@@ -82,7 +114,6 @@ _Bool Air780EG_Sendcmd(char *cmd, char *ret, char *respond)
 
         if (Air780EG_WaitRecive() == REV_OK) // 如果收到数据
         {
-            UsartPrintf(USART1, "buf:%d\r\n", Air780EG_cnt);
             if (strstr((const char *)Air780EG_buf, ret) != NULL) // 如果检索到关键词
             {
                 if (respond != NULL) { // 判断是否有填返回值参数
@@ -187,11 +218,6 @@ unsigned char save_testjsonData(char *json_output, struct Data data_array[], int
     json_len += sprintf(json_buf, "{"); // 我来组成头部
     UsartPrintf(USART1, "initjson_output:%s\r\n", &json_output);
     for (i = 0; i < count; i++) {
-
-        UsartPrintf(USART1, "msg:%s\r\n", data_array[i].msg);
-        UsartPrintf(USART1, "type:%d\r\n", data_array[i].type);
-        UsartPrintf(USART1, "value:%f\r\n", data_array[i].value);
-
         switch (data_array[i].type) {
             case Int:
                 json_len += sprintf(json_buf + json_len, "\\22%s\\22:%d", data_array[i].msg, *((int *)data_array[i].value)); // 键值对
@@ -204,21 +230,13 @@ unsigned char save_testjsonData(char *json_output, struct Data data_array[], int
         if (i < count - 1) {
             json_len += sprintf(json_buf + json_len, ","); // 如果不是最后一个数据，添加，
         }
-
-        UsartPrintf(USART1, "循环json_output:%s\r\n", &json_output);
-
-        json_len += sprintf(json_output, "%s", json_buf); // 把json_buf内容复制到json_output上作为输出
-
-        UsartPrintf(USART1, "循环json_buf:%s\r\n", &json_buf);
-
-        memset(json_buf, 0, sizeof(json_buf)); // 清空缓存,指针仍然指向&json_buf[0]
-
-        UsartPrintf(USART1, "循环end:%s\r\n", &json_output);
     }
 
+    json_len += sprintf(json_output, "%s", json_buf);
     strcat(json_output, "}"); // 组成尾部
     json_len = strlen(json_buf) / sizeof(char);
     UsartPrintf(USART1, "jsonend:%s\r\n", &json_output);
+
     return json_len;
 }
 
@@ -340,7 +358,7 @@ void Air780EG_testSendmqttdata(char topic[], int qos, int retain, struct Data da
     sprintf(sendbuf, "AT+MPUB=\"%s\",%d,%d,\"%s\"\r\n", topic, qos, retain, buf);
     UsartPrintf(USART1, "cmdoutput:%s\r\n", &sendbuf);
     Air780EG_Sendcmd(sendbuf, "OK\r\n", respond);
-
+    UsartPrintf(USART1, "testcmdsendok\r\n");
     memset(sendbuf, 0, sizeof(sendbuf));
     memset(buf, 0, sizeof(buf));
 }
@@ -381,13 +399,12 @@ void Air780EG_GNSSInit()
  * @param 无
  * @retval 0为成功，1为失败
  */
-_Bool Air780EG_sendGNSSdata()
+_Bool Air780EG_sendGNSSdata(float *longitude, float *latitude)
 {
     char GNSS_respond[256];
     char *GNSS_position;
     int count = 0; // 计数值和定位状态
-    float data[6]; // 经纬度存储'
-    char send_buf[150];
+    float data[3]; // 经纬度存储'
 
     /*  健壮程序，防止意外退出
     while (Air780EG_Sendcmd("AT+CGNSPWR?", "OK\r\n", GNSS_respond)) // 查询GNSS状态
@@ -409,14 +426,10 @@ _Bool Air780EG_sendGNSSdata()
 
     GNSS_position = strtok(GNSS_respond, ","); // 分割字符串
 
-    UsartPrintf(USART1, "position:%s\r\n", GNSS_position);
-
-    UsartPrintf(USART1, "stringcut\r\n");
-
     while (GNSS_position != NULL) {
 
         UsartPrintf(USART1, "position%d:%s\r\n", count, GNSS_position);
-        if (count > 2 && count < 5) {              // 取4、5
+        if (count > 3 && count < 6) {              // 取4、5
             data[count - 3] = atof(GNSS_position); // 将相应的信息转换成浮点型之后存到数组里面
             UsartPrintf(USART1, "cut:%f\r\n", data[count - 3]);
         }
@@ -425,8 +438,19 @@ _Bool Air780EG_sendGNSSdata()
     }
     UsartPrintf(USART1, "gnss_data1:%1f\r\n", data[0]);
     UsartPrintf(USART1, "gnss_data2:%1f\r\n", data[1]); // 发送数据
-    // Air780EG_Sendmqttdata(Float, "g0000001", 0, 0, &data[0], "longitude");
-    // Air780EG_Sendmqttdata(Float, "g0000001", 0, 0, &data[1], "latitude");
+
+    if (longitude != NULL && latitude != NULL) {
+        if (0 < data[0] < 180 && 0 < data[0] < 180) {
+            *longitude = data[0];
+            *latitude  = data[1];
+        } else {
+            *longitude = 0;
+            *latitude  = 0;
+        }
+    }
+    Air780EG_Clear();
+    memset(GNSS_respond, 0, sizeof(GNSS_respond));
+
     return 0;
 }
 

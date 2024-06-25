@@ -2,9 +2,7 @@
   "name": "Project",
   "type": "ARM",
   "dependenceList": [],
-  "srcDirs": [
-    ".eide/deps"
-  ],
+  "srcDirs": [],
   "virtualFolder": {
     "name": "<virtual_root>",
     "files": [],
@@ -448,6 +446,7 @@
       "custom_dep": {
         "name": "default",
         "incList": [
+          ".",
           "Start",
           "Library",
           "User",
@@ -458,11 +457,9 @@
           "NET",
           "MPU6050",
           ".cmsis/include",
-          "RTE/_Target 1",
-          ".eide/deps"
+          "RTE/_Target 1"
         ],
         "libList": [],
-        "sourceDirList": [],
         "defineList": [
           "USE_STDPERIPH_DRIVER",
           "STM32F10X_MD"
@@ -470,5 +467,5 @@
       }
     }
   },
-  "version": "3.3"
+  "version": "3.4"
 }
