@@ -23,17 +23,10 @@ struct Data{
 };
 
 void Air780EG_Clear(void);                                                                   // 清缓存
-_Bool Air780EG_WaitRecive(void);                                                             // 等待接收
-_Bool Air780EG_Sendcmd(char *cmd, char *ret, char *respond);                                 // 发送命令
-_Bool Air780EG_SendcmdReceive2key(char *cmd, char *ret1, char *ret2);                        // 发送命令，并检查发送回来的两个关键字符串
 void Air780EG_Init();                                                                        // 初始化
-unsigned char save_jsonData(char *json_output, char msg[], void *value, enum DataType Type); // 将数据封装成json格式
-unsigned char save_therejsonData(char *json_output, float *SPO2_value, int *heart_value, int *temp_value);
-void Air780EG_Sendmqttdata(enum DataType Type, char topic[], int qos, int retain, void *data, char msg[]); // 发送数据到EMQX
-void Air780EG_Sendtheremqttdata(char topic[], float *SPO2_data, int *heart_data, int *temp_data);
+void Air780EG_Sendonemqttdata(enum DataType Type, char topic[], int qos, int retain, void *data, char msg[]); // 发送数据到EMQX
 void Air780EG_GNSSInit();
 _Bool Air780EG_sendGNSSdata(float *longitude, float *latitude);
-
-void Air780EG_testSendmqttdata(char topic[], int qos, int retain, struct Data data_array[], int count, char *respond); // 测试
+void Air780EG_Sendmqttdata(char topic[], int qos, int retain, struct Data data_array[], int count, char *respond); // 测试
 
 #endif

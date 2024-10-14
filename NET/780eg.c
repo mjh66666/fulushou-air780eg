@@ -18,15 +18,15 @@
  *                                //.-~~~-~_--~- |-------~~~~~~~~
  *                                       //.-~~~--\
  *                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- * 
+ *
  *                               ÉñÊŞ±£ÓÓ            ÓÀÎŞBUG
- * 
+ *
  * @Author: mojionghao
  * @Date: 2024-04-08 11:25:05
  * @LastEditors: mojionghao
- * @LastEditTime: 2024-06-25 19:51:06
- * @FilePath: \ÖØ¹¹v1.3 - 780eg£¨ÎŞGPS£©\NET\780eg.c
- * @Description: 
+ * @LastEditTime: 2024-10-14 18:14:13
+ * @FilePath: \ÖØ¹¹v1.3 - 780eg£¨GPS£©Ã»µ÷ºÃ6.27\NET\780eg.c
+ * @Description:
  */
 
 /**
@@ -57,327 +57,300 @@ unsigned short Air780EG_cnt = 0, Air780EG_lastcnt = 0; // ½ÓÊÕÊı¾İ¼ÆÊıÖµ,ÉÏÒ»¸ö¼
 
 /**
  * @brief Çå³ı»º´æ
- * @param	ÎŞ
+ * @param   ÎŞ
  * @retval ÎŞ
  */
 
 void Air780EG_Clear(void)
 {
-    memset(Air780EG_buf, 0, sizeof(Air780EG_buf)); // ½«»º´æÇøµÄÊı¾İÈ«²¿Çå¿Õ
-    Air780EG_cnt = 0;
+	memset(Air780EG_buf, 0, sizeof(Air780EG_buf)); // ½«»º´æÇøµÄÊı¾İÈ«²¿Çå¿Õ
+	Air780EG_cnt = 0;
 }
 
 /**
-  * @brief	µÈ´ı½ÓÊÕÍê³É
-  * @param	ÎŞ
-  * @retval	REV_OK ½ÓÊÕÍê³É±êÖ¾ REV_WAIT	1½ÓÊÕÎ´Íê³É±êÖ¾
+  * @brief  µÈ´ı½ÓÊÕÍê³É
+  * @param  ÎŞ
+  * @retval REV_OK ½ÓÊÕÍê³É±êÖ¾ REV_WAIT  1½ÓÊÕÎ´Íê³É±êÖ¾
 
   */
 _Bool Air780EG_WaitRecive(void)
 {
-    // size_t length;
-    if (Air780EG_cnt == 0)
-        return REV_WAIT; // ÍêÈ«Ã»ÔÚ½ÓÊÕ
+	// size_t length;
+	if (Air780EG_cnt == 0) {
+		return REV_WAIT;    // ÍêÈ«Ã»ÔÚ½ÓÊÕ
+	}
 
-    if (Air780EG_cnt == Air780EG_lastcnt) // Èç¹ûÉÏÒ»´ÎµÄÖµºÍÕâ´ÎÏàÍ¬£¬ÔòËµÃ÷½ÓÊÕÍê±Ï
-    {
-        /*
-        length = strlen(Air780EG_buf);
-        if (length < 256 - 1) {
-            Air780EG_buf[length] = '\0'; //·Ç±ØÒª£¬Îª×Ö·û´®Î²²¿Ôö¼Ó'\0',ÒÔ·ÀÏÂÃæstrcpy³ö´í
-        } else {
-            Air780EG_buf[256 - 1] = '\0';
-        }
-        */
+	if (Air780EG_cnt == Air780EG_lastcnt) { // Èç¹ûÉÏÒ»´ÎµÄÖµºÍÕâ´ÎÏàÍ¬£¬ÔòËµÃ÷½ÓÊÕÍê±Ï
+		/*
+		length = strlen(Air780EG_buf);
+		if (length < 256 - 1) {
+		    Air780EG_buf[length] = '\0'; //·Ç±ØÒª£¬Îª×Ö·û´®Î²²¿Ôö¼Ó'\0',ÒÔ·ÀÏÂÃæstrcpy³ö´í
+		} else {
+		    Air780EG_buf[256 - 1] = '\0';
+		}
+		*/
 
-        Air780EG_cnt = 0; // ÇåÁã½ÓÊÕ¼ÆÊıÖµ
-        return REV_OK;
-    }
+		Air780EG_cnt = 0; // ÇåÁã½ÓÊÕ¼ÆÊıÖµ
+		return REV_OK;
+	}
 
-    Air780EG_lastcnt = Air780EG_cnt; // Èç¹û²»ÊÇÉÏÃæÁ½ÖÖÇé¿ö£¬ËµÃ÷»¹ÔÚ¼ÌĞø½ÓÊÕÊı¾İ£¬¶Ôlast½øĞĞ¸³Öµ£¬ÏÂ´Î¼ÌĞø±È¶Ô
-    return REV_WAIT;
+	Air780EG_lastcnt = Air780EG_cnt; // Èç¹û²»ÊÇÉÏÃæÁ½ÖÖÇé¿ö£¬ËµÃ÷»¹ÔÚ¼ÌĞø½ÓÊÕÊı¾İ£¬¶Ôlast½øĞĞ¸³Öµ£¬ÏÂ´Î¼ÌĞø±È¶Ô
+	return REV_WAIT;
 }
 
 /**
- * @brief	·¢ËÍÃüÁî
- * @param	cmd:ÃüÁî
+ * @brief   ·¢ËÍÃüÁî
+ * @param   cmd:ÃüÁî
  * @param   ret:ĞèÒª¼ì²éµÄ·µ»ØÖ¸Áî£¬Èç¡°+xxx¡±£¬¡°ok¡±
  * @param   respond:±£´æ·µ»ØÖ¸Áî£¬¶ÁÈ¡²ÎÊı
  * @retval  0 Îª³É¹¦£¬1ÎªÊ§°Ü
  */
 _Bool Air780EG_Sendcmd(char *cmd, char *ret, char *respond)
 {
-    uint8_t timewait = 200; // µÈ´ı´ÎÊı 0~255
-    Usart_SendString(USART2, (unsigned char *)cmd, strlen((const char *)cmd));
+	uint8_t timewait = 200; // µÈ´ı´ÎÊı 0~255
+	Usart_SendString(USART2, (unsigned char *)cmd, strlen((const char *)cmd));
 
-    while (timewait--) {
+	while (timewait--) {
 
-        if (Air780EG_WaitRecive() == REV_OK) // Èç¹ûÊÕµ½Êı¾İ
-        {
-            if (strstr((const char *)Air780EG_buf, ret) != NULL) // Èç¹û¼ìË÷µ½¹Ø¼ü´Ê
-            {
-                if (respond != NULL) { // ÅĞ¶ÏÊÇ·ñÓĞÌî·µ»ØÖµ²ÎÊı
-                    strcpy(respond, (const char *)Air780EG_buf);
-                }
-                Air780EG_Clear(); // Çå¿Õ»º´æ
-                return 0;
-            }
-        }
-        Delay_ms(10);
-    }
-    return 1;
+		if (Air780EG_WaitRecive() == REV_OK) { // Èç¹ûÊÕµ½Êı¾İ
+			if (strstr((const char *)Air780EG_buf, ret) != NULL) { // Èç¹û¼ìË÷µ½¹Ø¼ü´Ê
+				if (respond != NULL) { // ÅĞ¶ÏÊÇ·ñÓĞÌî·µ»ØÖµ²ÎÊı
+					strcpy(respond, (const char *)Air780EG_buf);
+				}
+				Air780EG_Clear(); // Çå¿Õ»º´æ
+				return 0;
+			}
+		}
+		Delay_ms(10);
+	}
+	return 1;
 }
 
 /**
- * @brief	Air780EGÉè±¸³õÊ¼»¯
- * @param	ÎŞ
+ * @brief   Air780EGÉè±¸³õÊ¼»¯
+ * @param   ÎŞ
  * @retval  ÎŞ
  */
 void Air780EG_Init()
 {
-    char test[100];
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+	char test[100];
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
 
-    GPIO_InitTypeDef GPIO_InitStructure;
-    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_Out_PP;
-    GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_1;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOA, &GPIO_InitStructure); // resetµÍµçÆ½ÓĞĞ§
+	GPIO_InitTypeDef GPIO_InitStructure;
+	GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_Out_PP;
+	GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_1;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIOA, &GPIO_InitStructure); // resetµÍµçÆ½ÓĞĞ§
 
-    GPIO_WriteBit(GPIOA, GPIO_Pin_1, Bit_RESET);
-    Delay_ms(2000);
-    GPIO_WriteBit(GPIOA, GPIO_Pin_1, Bit_SET);
-    Delay_ms(2000);
+	GPIO_WriteBit(GPIOA, GPIO_Pin_1, Bit_RESET);
+	Delay_ms(2000);
+	GPIO_WriteBit(GPIOA, GPIO_Pin_1, Bit_SET);
+	Delay_ms(2000);
 
-    UsartPrintf(USART1, "Reset!");
+	UsartPrintf(USART1, "Reset!");
 
-    Air780EG_Clear();
+	Air780EG_Clear();
 
-    while (Air780EG_Sendcmd("AT\r\n", "OK\r\n", NULL)) // ²éÑ¯ATÊÕ·¢ÊÇ·ñÕı³£
-        Delay_ms(100);
-    while (Air780EG_Sendcmd("ATE0\r\n", "OK\r\n", NULL)) // ¹Ø±Õ»ØÏÔ
-        Delay_ms(100);
-    UsartPrintf(USART1, "AT OK!");
-    while (Air780EG_Sendcmd("AT+CPIN?\r\n", "READY", NULL)) // ²éÑ¯PINÂëËø×´Ì¬
-        Delay_ms(100);
-    UsartPrintf(USART1, "SIM OK!");
-    while (Air780EG_Sendcmd("AT+CGATT?\r\n", "+CGATT: 1", test)) // ²éÑ¯SIM¿¨ÊÇ·ñ¸½×Å
-        Delay_ms(100);
+	while (Air780EG_Sendcmd("AT\r\n", "OK\r\n", NULL)) { // ²éÑ¯ATÊÕ·¢ÊÇ·ñÕı³£
+		Delay_ms(100);
+	}
+	while (Air780EG_Sendcmd("ATE0\r\n", "OK\r\n", NULL)) { // ¹Ø±Õ»ØÏÔ
+		Delay_ms(100);
+	}
+	UsartPrintf(USART1, "AT OK!");
+	while (Air780EG_Sendcmd("AT+CPIN?\r\n", "READY", NULL)) { // ²éÑ¯PINÂëËø×´Ì¬
+		Delay_ms(100);
+	}
+	UsartPrintf(USART1, "SIM OK!");
+	while (Air780EG_Sendcmd("AT+CGATT?\r\n", "+CGATT: 1", test)) { // ²éÑ¯SIM¿¨ÊÇ·ñ¸½×Å
+		Delay_ms(100);
+	}
 
-    // Á¬½Óµ½emqxÆ½Ì¨
-    while (Air780EG_Sendcmd(AT_EMQX_IP, "CONNECT OK", NULL))
-        Delay_ms(100);
-    while (Air780EG_Sendcmd(AT_EMQX_Client, "OK", NULL))
-        Delay_ms(100);
-    while (Air780EG_Sendcmd(AT_EMQX_CONNECT, "CONNACK OK", NULL))
-        Delay_ms(100);
-    UsartPrintf(USART1, "EMQX OK!");
+	// Á¬½Óµ½emqxÆ½Ì¨
+	while (Air780EG_Sendcmd(AT_EMQX_IP, "CONNECT OK", NULL)) {
+		Delay_ms(100);
+	}
+	while (Air780EG_Sendcmd(AT_EMQX_Client, "OK", NULL)) {
+		Delay_ms(100);
+	}
+	while (Air780EG_Sendcmd(AT_EMQX_CONNECT, "CONNACK OK", NULL)) {
+		Delay_ms(100);
+	}
+	UsartPrintf(USART1, "EMQX OK!");
 
-    UsartPrintf(USART1, "EMQX ready\r\n");
+	UsartPrintf(USART1, "EMQX ready\r\n");
 }
 
 /**
- * @brief	½«µ¥¸öÊı¾İ·â°üÎªjson¸ñÊ½
- * @param	msg:ÏûÏ¢¼üÖµÃû
+ * @brief   ½«µ¥¸öÊı¾İ·â°üÎªjson¸ñÊ½
+ * @param   msg:ÏûÏ¢¼üÖµÃû
  * @param   value£ºÊı¾İÖµ
- * @param	Type:Êı¾İÀàĞÍ£¬¿ÉÒÔÎªintºÍfloat
- * @retval	×Ö·û´®³¤¶È
+ * @param   Type:Êı¾İÀàĞÍ£¬¿ÉÒÔÎªintºÍfloat
+ * @retval  ×Ö·û´®³¤¶È
  */
 
 unsigned char save_jsonData(char *json_output, char msg[], void *value, enum DataType Type)
 {
-    unsigned short json_len;
-    char json_buf[150]; // buf:Êı¾İ´æ´¢Çø
-    switch (Type) {
-        case Int:
-            sprintf(json_buf, "{\\22%s\\22:%d}", msg, *(int *)value);
-            break; // ½«Êı¾İ¸ñÊ½»¯³Éjson
-        case Float:
-            sprintf(json_buf, "{\\22%s\\22:%1f}", msg, *(float *)value);
-            break;
-    }
-    json_len = strlen(json_buf) / sizeof(char); // ×Ö·û´®³¤¶È
-    memcpy(json_output, json_buf, json_len);    // copy jsonÊı¾İµ½json_output
-    return json_len;
+	unsigned short json_len;
+	char json_buf[150]; // buf:Êı¾İ´æ´¢Çø
+	switch (Type) {
+		case Int:
+			sprintf(json_buf, "{\\22%s\\22:%d}", msg, *(int *)value);
+			break; // ½«Êı¾İ¸ñÊ½»¯³Éjson
+		case Float:
+			sprintf(json_buf, "{\\22%s\\22:%1f}", msg, *(float *)value);
+			break;
+	}
+	json_len = strlen(json_buf) / sizeof(char); // ×Ö·û´®³¤¶È
+	memcpy(json_output, json_buf, json_len);    // copy jsonÊı¾İµ½json_output
+	return json_len;
 }
 
-/** ²âÊÔ´úÂë
- * @brief	½«¶à¸öÊı¾İ·â°üÎªjson¸ñÊ½
- * @param	msg:ÏûÏ¢¼üÖµÃû
+/**
+ * @brief   ½«¶à¸öÊı¾İ·â°üÎªjson¸ñÊ½
+ * @param   msg:ÏûÏ¢¼üÖµÃû
  * @param   value£ºÊı¾İÖµ
- * @param	Type:Êı¾İÀàĞÍ£¬¿ÉÒÔÎªintºÍfloat
- * @retval	×Ö·û´®³¤¶È
+ * @param   Type:Êı¾İÀàĞÍ£¬¿ÉÒÔÎªintºÍfloat
+ * @retval  ×Ö·û´®³¤¶È
  */
 
 unsigned char save_testjsonData(char *json_output, struct Data data_array[], int count)
 {
-    unsigned short json_len = 0;
-    char json_buf[100]; // buf:Êı¾İ´æ´¢Çø
-    int i;
-    memset(json_buf, 0, sizeof(json_buf));
-    json_len += sprintf(json_buf, "{"); // ÎÒÀ´×é³ÉÍ·²¿
-    UsartPrintf(USART1, "initjson_output:%s\r\n", &json_output);
-    for (i = 0; i < count; i++) {
-        switch (data_array[i].type) {
-            case Int:
-                json_len += sprintf(json_buf + json_len, "\\22%s\\22:%d", data_array[i].msg, *((int *)data_array[i].value)); // ¼üÖµ¶Ô
-                break;                                                                                                       // ½«Êı¾İ¸ñÊ½»¯³Éjson
-            case Float:
-                json_len += sprintf(json_buf + json_len, "\\22%s\\22:%f", data_array[i].msg, *((float *)data_array[i].value));
-                UsartPrintf(USART1, "½øÈëfloat:%s\r\n", &json_buf);
-                break; // ½«Êı¾İ¸ñÊ½»¯³Éjson
-        }
-        if (i < count - 1) {
-            json_len += sprintf(json_buf + json_len, ","); // Èç¹û²»ÊÇ×îºóÒ»¸öÊı¾İ£¬Ìí¼Ó£¬
-        }
-    }
+	unsigned short json_len = 0;
+	char json_buf[100]; // buf:Êı¾İ´æ´¢Çø
+	int i;
+	memset(json_buf, 0, sizeof(json_buf));
+	json_len += sprintf(json_buf, "{"); // ÎÒÀ´×é³ÉÍ·²¿
+	UsartPrintf(USART1, "initjson_output:%s\r\n", &json_output);
+	for (i = 0; i < count; i++) {
+		switch (data_array[i].type) {
+			case Int:
+				json_len += sprintf(json_buf + json_len, "\\22%s\\22:%d", data_array[i].msg, *((int *)data_array[i].value)); // ¼üÖµ¶Ô
+				break;                                                                                                       // ½«Êı¾İ¸ñÊ½»¯³Éjson
+			case Float:
+				json_len += sprintf(json_buf + json_len, "\\22%s\\22:%f", data_array[i].msg, *((float *)data_array[i].value));
+				UsartPrintf(USART1, "½øÈëfloat:%s\r\n", &json_buf);
+				break; // ½«Êı¾İ¸ñÊ½»¯³Éjson
+		}
+		if (i < count - 1) {
+			json_len += sprintf(json_buf + json_len, ","); // Èç¹û²»ÊÇ×îºóÒ»¸öÊı¾İ£¬Ìí¼Ó£¬
+		}
+	}
 
-    json_len += sprintf(json_output, "%s", json_buf);
-    strcat(json_output, "}"); // ×é³ÉÎ²²¿
-    json_len = strlen(json_buf) / sizeof(char);
-    UsartPrintf(USART1, "jsonend:%s\r\n", &json_output);
+	json_len += sprintf(json_output, "%s", json_buf);
+	strcat(json_output, "}"); // ×é³ÉÎ²²¿
+	json_len = strlen(json_buf) / sizeof(char);
+	UsartPrintf(USART1, "jsonend:%s\r\n", &json_output);
 
-    return json_len;
+	return json_len;
 }
 
-/**
- * @brief	½«Êı¾İ·â°üÎªjson¸ñÊ½ ĞÄÂÊ¡¢ÑªÑõ¡¢ÎÂ¶È×¨ÓÃ
- * @param	json_output:Êä³ö£¬value1¡¢2¡¢3£ºÊı¾İÖµ£¬
- * @retval	×Ö·û´®³¤¶È
- */
-unsigned char save_therejsonData(char *json_output, float *SPO2_value, int *heart_value, int *temp_value)
-{
-    unsigned short json_len;
-    char json_buf[150];
-    sprintf(json_buf, "{\\22%s\\22:%.2f,\\22%s\\22:%d,\\22%s\\22:%d}", "SPO2", *SPO2_value, "heart", *heart_value, "temp", *temp_value); // ½«Êı¾İ¸ñÊ½»¯³Éjson
-    json_len = strlen(json_buf) / sizeof(char);                                                                                          // ×Ö·û´®³¤¶È
-    memcpy(json_output, json_buf, json_len);                                                                                             // copy jsonÊı¾İµ½
-    return json_len;
-}
 
 /**
-  * @brief	Í¨¹ıAT+MPUB·¢²¼ÃüÁî·¢ËÍjson¸ñÊ½µÄµ¥¸öÊı¾İ
-  * @param	Type:Êı¾İÀàĞÍ,,,
-    @param	qos£º·şÎñÖÊÁ¿
-    @param	retain£º±£Áô±êÖ¾
-    @param	topic£ºÏûÏ¢Ö÷Ìâ
+  * @brief  Í¨¹ıAT+MPUB·¢²¼ÃüÁî·¢ËÍjson¸ñÊ½µÄµ¥¸öÊı¾İ
+  * @param  Type:Êı¾İÀàĞÍ,,,
+    @param  qos£º·şÎñÖÊÁ¿
+    @param  retain£º±£Áô±êÖ¾
+    @param  topic£ºÏûÏ¢Ö÷Ìâ
     @param  data£ºÏûÏ¢ÄÚÈİ
     @param  msg£ºÏûÏ¢¼üÖµ¶Ô
     µäĞÍ:AT+MPUB="test2",0,0,"{\22msg\22:\22say\22}"
   * @retval
   */
-void Air780EG_Sendmqttdata(enum DataType Type, char topic[], int qos, int retain, void *data, char msg[])
+void Air780EG_Sendonemqttdata(enum DataType Type, char topic[], int qos, int retain, void *data, char msg[])
 {
-    char buf[150];     // ´æ´¢Òªjson×Ö·û
-    char sendbuf[150]; // ´æ´¢Òª·¢ËÍµÄ×Ü×Ö·û
-    char retur[256];
-    bool x;
-    Air780EG_Clear(); // Çå»º´æ
-    memset(sendbuf, 0, sizeof(sendbuf));
-    memset(buf, 0, sizeof(buf));
+	char buf[150];     // ´æ´¢Òªjson×Ö·û
+	char sendbuf[150]; // ´æ´¢Òª·¢ËÍµÄ×Ü×Ö·û
+	char retur[256];
+	bool x;
+	Air780EG_Clear(); // Çå»º´æ
+	memset(sendbuf, 0, sizeof(sendbuf));
+	memset(buf, 0, sizeof(buf));
 
-    save_jsonData(buf, msg, data, Type); // ¸ñÊ½»¯Êı¾İ,ÏûÏ¢Ãû£¬Êı¾İ
-    UsartPrintf(USART1, "pack ready\r\n");
-    sprintf(sendbuf, "AT+MPUB=\"%s\",%d,%d,\"%s\"\r\n", topic, qos, retain, buf); // '\'×ªÒå £¬" \" "´ú±í¡±Ë«ÒıºÅ
+	save_jsonData(buf, msg, data, Type); // ¸ñÊ½»¯Êı¾İ,ÏûÏ¢Ãû£¬Êı¾İ
+	UsartPrintf(USART1, "pack ready\r\n");
+	sprintf(sendbuf, "AT+MPUB=\"%s\",%d,%d,\"%s\"\r\n", topic, qos, retain, buf); // '\'×ªÒå £¬" \" "´ú±í¡±Ë«ÒıºÅ
 
-    x = Air780EG_Sendcmd(sendbuf, "OK\r\n", retur);
-    UsartPrintf(USART1, "return:%s", retur);
-    UsartPrintf(USART1, "flag:%d", x);
+	x = Air780EG_Sendcmd(sendbuf, "OK\r\n", retur);
+	UsartPrintf(USART1, "return:%s", retur);
+	UsartPrintf(USART1, "flag:%d", x);
 
-    memset(sendbuf, 0, sizeof(retur));
-    memset(sendbuf, 0, sizeof(sendbuf));
-    memset(buf, 0, sizeof(buf));
+	memset(sendbuf, 0, sizeof(retur));
+	memset(sendbuf, 0, sizeof(sendbuf));
+	memset(buf, 0, sizeof(buf));
 }
 
 /**
-  * @brief	Í¨¹ıAT+MPUB·¢²¼ÃüÁî·¢ËÍjson¸ñÊ½µÄÈı¸öÊı¾İ£¨ĞÄÂÊÑªÑõÎÂ¶È×¨ÓÃ£©
-            qos£º·şÎñÖÊÁ¿Îª0,retain£º±£Áô±êÖ¾Îª0,
-  * @param	char topic[]£ºÖ÷Ìâ,data£ºÏûÏ¢ÄÚÈİ
-            µäĞÍ:AT+MPUB="test2",0,0,"{\22msg\22:\22say\22}"
-  * @retval
-  */
-
-void Air780EG_Sendtheremqttdata(char topic[], float *SPO2_data, int *heart_data, int *temp_data)
-{
-    char buf[150];     // ´æ´¢Òªjson×Ö·û
-    char sendbuf[150]; // ´æ´¢Òª·¢ËÍµÄ×Ü×Ö·û
-    bool send_flag;
-    char test[100];
-    Air780EG_Clear(); // Çå»º´æ
-    memset(sendbuf, 0, sizeof(sendbuf));
-    memset(buf, 0, sizeof(buf));
-
-    save_therejsonData(buf, SPO2_data, heart_data, temp_data); // ¸ñÊ½»¯Êı¾İ,Êı¾İ
-    UsartPrintf(USART1, "pack ready\r\n");
-    sprintf(sendbuf, "AT+MPUB=\"%s\",%d,%d,\"%s\"\r\n", topic, 0, 0, buf); // '\'×ªÒå £¬" \" "´ú±í¡±Ë«ÒıºÅ
-
-    send_flag = Air780EG_Sendcmd(sendbuf, "OK\r\n", test);
-
-    UsartPrintf(USART1, "send_flag:%d\r\n", send_flag);
-    UsartPrintf(USART1, "there_return:%s\r\n", test);
-
-    UsartPrintf(USART1, "bool:%d", strstr((const char *)test, "767"));
-
-    if (strstr((const char *)test, "767") != NULL && send_flag == 1) // ´íÎóÂë
-    {
-        UsartPrintf(USART1, "bool:%d", strstr((const char *)test, "767"));
-        while (Air780EG_Sendcmd(AT_EMQX_IP, "CONNECT OK", NULL))
-            Delay_ms(100);
-        while (Air780EG_Sendcmd(AT_EMQX_Client, "OK", NULL))
-            Delay_ms(100);
-        while (Air780EG_Sendcmd(AT_EMQX_CONNECT, "CONNACK OK", NULL))
-            Delay_ms(100);
-        Air780EG_Sendcmd(sendbuf, "OK\r\n", test);
-    }
-    memset(sendbuf, 0, sizeof(sendbuf));
-    memset(buf, 0, sizeof(buf));
-}
-
-/**
-  * @brief	Í¨¹ıAT+MPUB·¢²¼ÃüÁî·¢ËÍjson¸ñÊ½µÄµ¥¸öÊı¾İ
-  * @param	Type:Êı¾İÀàĞÍ,,,
-    @param	qos£º·şÎñÖÊÁ¿
-    @param	retain£º±£Áô±êÖ¾
-    @param	topic£ºÏûÏ¢Ö÷Ìâ
+  * @brief  Í¨¹ıAT+MPUB·¢²¼ÃüÁî·¢ËÍjson¸ñÊ½µÄ¶à¸öÊı¾İ
+  * @param  Type:Êı¾İÀàĞÍ,,,
+    @param  qos£º·şÎñÖÊÁ¿
+    @param  retain£º±£Áô±êÖ¾
+    @param  topic£ºÏûÏ¢Ö÷Ìâ
     @param  data£ºÏûÏ¢ÄÚÈİ
     @param  msg£ºÏûÏ¢¼üÖµ¶Ô
     µäĞÍ:AT+MPUB="test2",0,0,"{\22msg\22:\22say\22}"
   * @retval
   */
-void Air780EG_testSendmqttdata(char topic[], int qos, int retain, struct Data data_array[], int count, char *respond)
+void Air780EG_Sendmqttdata(char topic[], int qos, int retain, struct Data data_array[], int count, char *respond)
 {
-    char buf[150];     // ´æ´¢Òªjson×Ö·û
-    char sendbuf[150]; // ´æ´¢Òª·¢ËÍµÄ×Ü×Ö·û
+	char buf[150];     // ´æ´¢Òªjson×Ö·û
+	char sendbuf[150]; // ´æ´¢Òª·¢ËÍµÄ×Ü×Ö·û
 
-    Air780EG_Clear(); // Çå»º´æ
-    memset(sendbuf, 0, sizeof(sendbuf));
-    memset(buf, 0, sizeof(buf));
+	Air780EG_Clear(); // Çå»º´æ
+	memset(sendbuf, 0, sizeof(sendbuf));
+	memset(buf, 0, sizeof(buf));
 
-    save_testjsonData(buf, data_array, count);
-    UsartPrintf(USART1, "jsonoutput:%s\r\n", &buf);
-    sprintf(sendbuf, "AT+MPUB=\"%s\",%d,%d,\"%s\"\r\n", topic, qos, retain, buf);
-    UsartPrintf(USART1, "cmdoutput:%s\r\n", &sendbuf);
-    Air780EG_Sendcmd(sendbuf, "OK\r\n", respond);
-    UsartPrintf(USART1, "testcmdsendok\r\n");
-    memset(sendbuf, 0, sizeof(sendbuf));
-    memset(buf, 0, sizeof(buf));
+	save_testjsonData(buf, data_array, count);
+	UsartPrintf(USART1, "jsonoutput:%s\r\n", &buf);
+	sprintf(sendbuf, "AT+MPUB=\"%s\",%d,%d,\"%s\"\r\n", topic, qos, retain, buf);
+	UsartPrintf(USART1, "cmdoutput:%s\r\n", &sendbuf);
+	Air780EG_Sendcmd(sendbuf, "OK\r\n", respond);
+	UsartPrintf(USART1, "testcmdsendok\r\n");
+	memset(sendbuf, 0, sizeof(sendbuf));
+	memset(buf, 0, sizeof(buf));
 }
 
+/*Ê¹ÓÃÄ£°å
+            // ¹¹½¨½á¹¹ÌåÊı×é
+struct Data data[3];
+
+strcpy(data[0].msg, "SPO2");
+data[0].type  = Float;
+data[0].value = (void *)&g_blooddata.SpO2;
+
+strcpy(data[1].msg, "heart");
+data[1].type  = Int;
+data[1].value = (void *)&g_blooddata.heart;
+
+strcpy(data[2].msg, "temp");
+data[2].type  = Int;
+data[2].value = (void *)&temperature;
+
+// ·¢ËÍ½á¹¹ÌåÊı×é
+Air780EG_testSendmqttdata("l00000001", 0, 0, data, 3, NULL);
+Air780EG_Clear();
+
+*/
+
+
+
+
 /**
- * @brief ´®¿ÚÖĞ¶Ï	½«DR¼Ä´æÆ÷ÀïµÄ´®¿ÚÊı¾İ¶Áµ½Air780EG»º´æÇø
+ * @brief ´®¿ÚÖĞ¶Ï  ½«DR¼Ä´æÆ÷ÀïµÄ´®¿ÚÊı¾İ¶Áµ½Air780EG»º´æÇø
  * @param
  * @retval
  */
 void USART2_IRQHandler(void)
 {
 
-    if (USART_GetITStatus(USART2, USART_IT_RXNE) != RESET) // ½ÓÊÕÖĞ¶Ï
-    {
-        if (Air780EG_cnt >= sizeof(Air780EG_buf)) Air780EG_cnt = 0; // ·ÀÖ¹´®¿Ú±»Ë¢±¬
-        Air780EG_buf[Air780EG_cnt++] = USART2->DR;
+	if (USART_GetITStatus(USART2, USART_IT_RXNE) != RESET) { // ½ÓÊÕÖĞ¶Ï
+		if (Air780EG_cnt >= sizeof(Air780EG_buf)) {
+			Air780EG_cnt = 0;    // ·ÀÖ¹´®¿Ú±»Ë¢±¬
+		}
+		Air780EG_buf[Air780EG_cnt++] = USART2->DR;
 
-        USART_ClearFlag(USART2, USART_FLAG_RXNE);
-    }
+		USART_ClearFlag(USART2, USART_FLAG_RXNE);
+	}
 }
 
 /**************************ÒÔÏÂÎªGNSSÄ£¿é¹¦ÄÜ²¿·Ö********************************************/
@@ -388,11 +361,13 @@ void USART2_IRQHandler(void)
  */
 void Air780EG_GNSSInit()
 {
-    while (Air780EG_Sendcmd("AT+CGNSPWR=1\r\n", "OK\r\n", NULL)) // ´ò¿ªGPS
-        Delay_ms(500);
-    while (Air780EG_Sendcmd("AT+CGNSAID=31,1,1,1\r\n", "OK\r\n", NULL)) // Ê¹ÄÜÎ»ÖÃ¸¨Öú¶¨Î»
-        Delay_ms(500);
-    UsartPrintf(USART1, "GNSS ok!");
+	while (Air780EG_Sendcmd("AT+CGNSPWR=1\r\n", "OK\r\n", NULL)) { // ´ò¿ªGPS
+		Delay_ms(500);
+	}
+	while (Air780EG_Sendcmd("AT+CGNSAID=31,1,1,1\r\n", "OK\r\n", NULL)) { // Ê¹ÄÜÎ»ÖÃ¸¨Öú¶¨Î»
+		Delay_ms(500);
+	}
+	UsartPrintf(USART1, "GNSS ok!");
 }
 /**
  * @brief ¶ÁÈ¡GNSSĞÅÏ¢ºó·¢ÉúÊı¾İµ½EMQX
@@ -401,57 +376,58 @@ void Air780EG_GNSSInit()
  */
 _Bool Air780EG_sendGNSSdata(float *longitude, float *latitude)
 {
-    char GNSS_respond[256];
-    char *GNSS_position;
-    int count = 0; // ¼ÆÊıÖµºÍ¶¨Î»×´Ì¬
-    float data[3]; // ¾­Î³¶È´æ´¢'
+	char GNSS_respond[256];
+	char *GNSS_position;
+	int count = 0; // ¼ÆÊıÖµºÍ¶¨Î»×´Ì¬
+	float data[3]; // ¾­Î³¶È´æ´¢'
 
-    /*  ½¡×³³ÌĞò£¬·ÀÖ¹ÒâÍâÍË³ö
-    while (Air780EG_Sendcmd("AT+CGNSPWR?", "OK\r\n", GNSS_respond)) // ²éÑ¯GNSS×´Ì¬
-        Delay_ms(500);
-    if (strstr((const char *)GNSS_respond, "1") != NULL) // Èç¹û¼ìË÷µ½¹Ø¼ü´Ê'1'¼´Îª´ò¿ª
-    {
-        memset(GNSS_respond, 0, sizeof(GNSS_respond));
-    } else // ·ñÔò¾Í¼ÌĞø´ò¿ª
-    {
-        memset(GNSS_respond, 0, sizeof(GNSS_respond));
-        Air780EG_GNSSInit();
-    }
-    */
+	/*  ½¡×³³ÌĞò£¬·ÀÖ¹ÒâÍâÍË³ö
+	while (Air780EG_Sendcmd("AT+CGNSPWR?", "OK\r\n", GNSS_respond)) // ²éÑ¯GNSS×´Ì¬
+	    Delay_ms(500);
+	if (strstr((const char *)GNSS_respond, "1") != NULL) // Èç¹û¼ìË÷µ½¹Ø¼ü´Ê'1'¼´Îª´ò¿ª
+	{
+	    memset(GNSS_respond, 0, sizeof(GNSS_respond));
+	} else // ·ñÔò¾Í¼ÌĞø´ò¿ª
+	{
+	    memset(GNSS_respond, 0, sizeof(GNSS_respond));
+	    Air780EG_GNSSInit();
+	}
+	*/
 
-    Air780EG_Sendcmd("AT+CGNSINF\r\n", "OK\r\n", GNSS_respond);
-    UsartPrintf(USART1, "gnssreturn:%s\r\n", GNSS_respond);
+	Air780EG_Sendcmd("AT+CGNSINF\r\n", "OK\r\n", GNSS_respond);
+	UsartPrintf(USART1, "gnssreturn:%s\r\n", GNSS_respond);
 
-    UsartPrintf(USART1, "gnssget\r\n");
+	UsartPrintf(USART1, "gnssget\r\n");
 
-    GNSS_position = strtok(GNSS_respond, ","); // ·Ö¸î×Ö·û´®
+	GNSS_position = strtok(GNSS_respond, ","); // ·Ö¸î×Ö·û´®
 
-    while (GNSS_position != NULL) {
+	while (GNSS_position != NULL) {
 
-        UsartPrintf(USART1, "position%d:%s\r\n", count, GNSS_position);
-        if (count > 3 && count < 6) {              // È¡4¡¢5
-            data[count - 3] = atof(GNSS_position); // ½«ÏàÓ¦µÄĞÅÏ¢×ª»»³É¸¡µãĞÍÖ®ºó´æµ½Êı×éÀïÃæ
-            UsartPrintf(USART1, "cut:%f\r\n", data[count - 3]);
-        }
-        count++;
-        GNSS_position = strtok(NULL, ",");
-    }
-    UsartPrintf(USART1, "gnss_data1:%1f\r\n", data[0]);
-    UsartPrintf(USART1, "gnss_data2:%1f\r\n", data[1]); // ·¢ËÍÊı¾İ
+		UsartPrintf(USART1, "position%d:%s\r\n", count, GNSS_position);
+		if (count > 3 && count < 6) {              // È¡4¡¢5
+			data[count - 3] = atof(GNSS_position); // ½«ÏàÓ¦µÄĞÅÏ¢×ª»»³É¸¡µãĞÍÖ®ºó´æµ½Êı×éÀïÃæ
+			UsartPrintf(USART1, "cut:%f\r\n", data[count - 3]);
+		}
+		count++;
+		GNSS_position = strtok(NULL, ",");
+	}
+	UsartPrintf(USART1, "gnss_data1:%1f\r\n", data[0]);
+	UsartPrintf(USART1, "gnss_data2:%1f\r\n", data[1]); // ·¢ËÍÊı¾İ
 
-    if (longitude != NULL && latitude != NULL) {
-        if (0 < data[0] < 180 && 0 < data[0] < 180) {
-            *longitude = data[0];
-            *latitude  = data[1];
-        } else {
-            *longitude = 0;
-            *latitude  = 0;
-        }
-    }
-    Air780EG_Clear();
-    memset(GNSS_respond, 0, sizeof(GNSS_respond));
+	if (longitude != NULL && latitude != NULL) {
+		if (0 < data[0] < 180 && 0 < data[0] < 180) {
+			*longitude = data[0];
+			*latitude  = data[1];
+		}
+		else {
+			*longitude = 0;
+			*latitude  = 0;
+		}
+	}
+	Air780EG_Clear();
+	memset(GNSS_respond, 0, sizeof(GNSS_respond));
 
-    return 0;
+	return 0;
 }
 
 /*
